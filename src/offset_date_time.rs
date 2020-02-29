@@ -978,6 +978,52 @@ impl From<OffsetDateTime> for SystemTime {
 mod test {
     use super::*;
 
+    macro_rules! date {
+        ($year:literal - $month:literal - $day:literal) => {
+            Date::try_from_ymd($year, $month, $day).unwrap()
+        };
+
+        ($year:literal - $ordinal:literal) => {
+            Date::try_from_yo($year, $ordinal).unwrap()
+        };
+    }
+
+    macro_rules! time {
+        ($hour:literal : $minute:literal : $second:literal . $nanosecond:literal) => {
+            Time::try_from_hms_nano($hour, $minute, $second, $nanosecond).unwrap()
+        };
+
+        ($hour:literal : $minute:literal : $second:literal) => {
+            Time::try_from_hms($hour, $minute, $second).unwrap()
+        };
+
+        ($hour:literal : $minute:literal) => {
+            Time::try_from_hms($hour, $minute, 0).unwrap()
+        };
+    }
+
+    macro_rules! offset {
+        (UTC) => {
+            UtcOffset::UTC
+        };
+
+        ($hours:literal) => {
+            UtcOffset::hours($hours)
+        };
+
+        (+ $hours:literal) => {
+            UtcOffset::east_hours($hours)
+        };
+
+        (+ $hours:literal : $minutes:literal) => {
+            UtcOffset::east_minutes($hours * 60 + $minutes)
+        };
+
+        (+ $hours:literal : $minutes:literal : $seconds:literal) => {
+            UtcOffset::east_seconds($hours * 3_600 + $minutes * 60 + $seconds)
+        };
+    }
+
     #[test]
     #[cfg(std)]
     fn now() {
@@ -1239,7 +1285,7 @@ mod test {
         assert_eq!(date!(2019-01-01).midnight().assume_utc().millisecond(), 0);
         assert_eq!(
             date!(2019-01-01)
-                .with_time(time!(23:59:59.999))
+                .with_time(time!(23:59:59 . 999_000_000))
                 .assume_utc()
                 .millisecond(),
             999,
@@ -1251,7 +1297,7 @@ mod test {
         assert_eq!(date!(2019-01-01).midnight().assume_utc().microsecond(), 0);
         assert_eq!(
             date!(2019-01-01)
-                .with_time(time!(23:59:59.999_999))
+                .with_time(time!(23:59:59 . 999_999_000))
                 .assume_utc()
                 .microsecond(),
             999_999,
@@ -1263,7 +1309,7 @@ mod test {
         assert_eq!(date!(2019-01-01).midnight().assume_utc().nanosecond(), 0);
         assert_eq!(
             date!(2019-01-01)
-                .with_time(time!(23:59:59.999_999_999))
+                .with_time(time!(23:59:59 . 999_999_999))
                 .assume_utc()
                 .nanosecond(),
             999_999_999,
@@ -1290,7 +1336,9 @@ mod test {
         );
         assert_eq!(
             OffsetDateTime::parse("2019-W01-3 12:00:00 pm +0000", "%G-W%V-%u %r %z"),
-            Ok(date!(2019-W01-3).with_time(time!(12:00)).assume_utc())
+            Ok(Date::try_from_iso_wyd(2019, 1, Wednesday)
+                .unwrap()
+                .with_time(time!(12:00)))
         );
         assert_eq!(
             OffsetDateTime::parse("2019-01-02 03:04:05 +0600", "%F %T %z"),

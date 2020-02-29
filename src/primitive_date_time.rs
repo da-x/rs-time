@@ -81,7 +81,7 @@ impl PrimitiveDateTime {
                 year: 1970,
                 ordinal: 1,
             },
-            time: time!(0:00),
+            time: Time::midnight(),
         }
     }
 
@@ -466,7 +466,7 @@ impl PrimitiveDateTime {
     pub const fn assume_utc(self) -> OffsetDateTime {
         OffsetDateTime {
             utc_datetime: self,
-            offset: offset!(UTC),
+            offset: UtcOffset::UTC,
         }
     }
 }
@@ -749,6 +749,36 @@ impl From<PrimitiveDateTime> for SystemTime {
 mod test {
     use super::*;
 
+    macro_rules! date {
+        ($year:literal - $month:literal - $day:literal) => {
+            Date::try_from_ymd($year, $month, $day).unwrap()
+        };
+
+        ($year:literal - $ordinal:literal) => {
+            Date::try_from_yo($year, $ordinal).unwrap()
+        };
+    }
+
+    macro_rules! time {
+        ($hour:literal : $minute:literal : $second:literal) => {
+            Time::try_from_hms($hour, $minute, $second).unwrap()
+        };
+
+        ($hour:literal : $minute:literal) => {
+            Time::try_from_hms($hour, $minute, 0).unwrap()
+        };
+    }
+
+    macro_rules! offset {
+        (UTC) => {
+            UtcOffset::UTC
+        };
+
+        ($hours:literal) => {
+            UtcOffset::hours($hours)
+        };
+    }
+
     #[test]
     fn new() {
         assert_eq!(
@@ -899,7 +929,8 @@ mod test {
         assert_eq!(date!(2019-01-01).midnight().millisecond(), 0);
         assert_eq!(
             date!(2019-01-01)
-                .with_time(time!(23:59:59.999))
+                .try_with_hms_milli(23, 59, 59, 999)
+                .unwrap()
                 .millisecond(),
             999
         );
@@ -910,7 +941,8 @@ mod test {
         assert_eq!(date!(2019-01-01).midnight().microsecond(), 0);
         assert_eq!(
             date!(2019-01-01)
-                .with_time(time!(23:59:59.999_999))
+                .try_with_hms_micro(23, 59, 59, 999_999)
+                .unwrap()
                 .microsecond(),
             999_999
         );
@@ -921,7 +953,8 @@ mod test {
         assert_eq!(date!(2019-01-01).midnight().nanosecond(), 0);
         assert_eq!(
             date!(2019-01-01)
-                .with_time(time!(23:59:59.999_999_999))
+                .try_with_hms_nano(23, 59, 59, 999_999_999)
+                .unwrap()
                 .nanosecond(),
             999_999_999
         );
@@ -985,7 +1018,7 @@ mod test {
         );
         assert_eq!(
             PrimitiveDateTime::parse("2019-W01-3 12:00:00 pm", "%G-W%V-%u %r"),
-            Ok(date!(2019-W01-3).with_time(time!(12:00))),
+            Date::try_from_iso_ywd(2019, 1, Wednesday).with_time(time!(12:00))
         );
     }
 

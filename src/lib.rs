@@ -479,7 +479,6 @@ mod internal_prelude {
         vec,
         vec::Vec,
     };
-    pub(crate) use time_macros::{date, offset, time};
 }
 
 #[allow(clippy::missing_docs_in_private_items)]

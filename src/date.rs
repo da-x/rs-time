@@ -1121,6 +1121,26 @@ mod test {
         };
     }
 
+    macro_rules! date {
+        ($year:literal - $month:literal - $day:literal) => {
+            Date::try_from_ymd($year, $month, $day).unwrap()
+        };
+
+        ($year:literal - $ordinal:literal) => {
+            Date::try_from_yo($year, $ordinal).unwrap()
+        };
+    }
+
+    macro_rules! time {
+        ($hour:literal : $minute:literal : $second:literal) => {
+            Time::try_from_hms($hour, $minute, $second).unwrap()
+        };
+
+        ($hour:literal : $minute:literal) => {
+            Time::try_from_hms($hour, $minute, 0).unwrap()
+        };
+    }
+
     #[test]
     fn weeks_in_year_exhaustive() {
         let years_with_53 = &[
@@ -2174,7 +2194,7 @@ mod test {
         assert_eq!(Date::parse("2019-002", "%Y-%j"), Ok(date!(2019-002)));
         assert_eq!(
             Date::parse("2019-W01-3", "%G-W%V-%u"),
-            Ok(date!(2019-W01-3))
+            Date::try_from_iso_ywd(2019, 1, Wednesday)
         );
     }
 
